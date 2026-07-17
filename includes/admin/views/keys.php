@@ -163,9 +163,111 @@
     </form>
 
     <hr>
-    <h3><?php esc_html_e( 'Como conectar', 'agentpress' ); ?></h3>
-    <p><?php esc_html_e( 'Seu endpoint MCP SSE:', 'agentpress' ); ?> <code><?php echo esc_html( $sse_url ); ?></code></p>
-    <p><?php esc_html_e( 'Adicione o header Authorization: Bearer SUA_CHAVE_API para conectar seu agente.', 'agentpress' ); ?></p>
+    <h2><?php esc_html_e( 'Como conectar', 'agentpress' ); ?></h2>
+
+    <div style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; margin-top: 10px;">
+        <h3 style="margin-top: 0;">📡 <?php esc_html_e( 'Endpoints', 'agentpress' ); ?></h3>
+        <table class="widefat" style="max-width: 600px;">
+            <tr>
+                <td><strong>MCP (Streamable HTTP)</strong></td>
+                <td><code><?php echo esc_html( rest_url( 'agentpress/v1/mcp' ) ); ?></code></td>
+            </tr>
+            <tr>
+                <td><strong>SSE (legacy)</strong></td>
+                <td><code><?php echo esc_html( $sse_url ); ?></code></td>
+            </tr>
+            <tr>
+                <td><strong>Health Check</strong></td>
+                <td><code><?php echo esc_html( rest_url( 'agentpress/v1/health' ) ); ?></code></td>
+            </tr>
+        </table>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>🔌 <?php esc_html_e( 'Configuração para Kiro / Cursor / Claude Code', 'agentpress' ); ?></h3>
+        <p class="description"><?php esc_html_e( 'Adicione ao seu arquivo mcp.json:', 'agentpress' ); ?></p>
+        <pre style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px;">{
+  "mcpServers": {
+    "wordpress": {
+      "url": "<?php echo esc_html( rest_url( 'agentpress/v1/mcp' ) ); ?>",
+      "headers": {
+        "Authorization": "Bearer SUA_CHAVE_API_AQUI"
+      }
+    }
+  }
+}</pre>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>🖥️ <?php esc_html_e( 'Configuração para Claude Desktop', 'agentpress' ); ?></h3>
+        <p class="description"><?php esc_html_e( 'Adicione ao arquivo claude_desktop_config.json:', 'agentpress' ); ?></p>
+        <pre style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px;">{
+  "mcpServers": {
+    "wordpress": {
+      "url": "<?php echo esc_html( rest_url( 'agentpress/v1/sse' ) ); ?>",
+      "headers": {
+        "Authorization": "Bearer SUA_CHAVE_API_AQUI"
+      }
+    }
+  }
+}</pre>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>🌐 <?php esc_html_e( 'Teste via cURL', 'agentpress' ); ?></h3>
+        <pre style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px;"># Health check
+curl <?php echo esc_html( rest_url( 'agentpress/v1/health' ) ); ?>
+
+# Listar tools
+curl -X POST \
+  -H "Authorization: Bearer SUA_CHAVE_API_AQUI" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","params":{},"id":1}' \
+  <?php echo esc_html( rest_url( 'agentpress/v1/mcp' ) ); ?></pre>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>⚡ <?php esc_html_e( 'Qual endpoint usar?', 'agentpress' ); ?></h3>
+        <table class="widefat" style="max-width: 600px;">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e( 'Client', 'agentpress' ); ?></th>
+                    <th><?php esc_html_e( 'Endpoint', 'agentpress' ); ?></th>
+                    <th><?php esc_html_e( 'Notas', 'agentpress' ); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Kiro</td>
+                    <td><code>/mcp</code></td>
+                    <td><?php esc_html_e( 'Streamable HTTP — recomendado', 'agentpress' ); ?></td>
+                </tr>
+                <tr>
+                    <td>Cursor</td>
+                    <td><code>/mcp</code></td>
+                    <td><?php esc_html_e( 'Streamable HTTP', 'agentpress' ); ?></td>
+                </tr>
+                <tr>
+                    <td>Claude Desktop</td>
+                    <td><code>/sse</code></td>
+                    <td><?php esc_html_e( 'SSE transport (requer VPS/dedicado)', 'agentpress' ); ?></td>
+                </tr>
+                <tr>
+                    <td>Claude Code</td>
+                    <td><code>/mcp</code></td>
+                    <td><?php esc_html_e( 'Streamable HTTP', 'agentpress' ); ?></td>
+                </tr>
+                <tr>
+                    <td>ChatGPT</td>
+                    <td><code>/mcp</code></td>
+                    <td><?php esc_html_e( 'Streamable HTTP', 'agentpress' ); ?></td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="description" style="margin-top: 10px;">
+            ⚠️ <?php esc_html_e( 'O endpoint /sse requer que o servidor mantenha conexões longas. Em hosting compartilhado (Hostinger, GoDaddy, etc), use /mcp.', 'agentpress' ); ?>
+        </p>
+    </div>
 </div>
 
 <script>
