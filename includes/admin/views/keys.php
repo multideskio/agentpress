@@ -7,7 +7,7 @@
         <div class="notice notice-success">
             <p><strong><?php esc_html_e( 'Nova chave criada!', 'agentpress' ); ?></strong> <?php esc_html_e( 'Copie agora — ela não será exibida novamente:', 'agentpress' ); ?></p>
             <code style="font-size: 14px; padding: 8px; display: block; background: #f0f0f0; margin: 8px 0;"><?php echo esc_html( $new_key ); ?></code>
-            <p><strong><?php esc_html_e( 'Endpoint SSE:', 'agentpress' ); ?></strong> <code><?php echo esc_html( $sse_url ); ?></code></p>
+            <p><strong><?php esc_html_e( 'Endpoint MCP:', 'agentpress' ); ?></strong> <code><?php echo esc_html( rest_url( 'agentpress/v1/mcp' ) ); ?></code></p>
         </div>
     <?php endif; ?>
 
