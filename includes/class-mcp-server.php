@@ -74,8 +74,9 @@ class MCP_Server {
 
     /**
      * Handle SSE connection — MCP transport layer.
-     * Optimized for shared hosting: sends endpoint and keeps connection
-     * alive with minimal resource usage.
+     * Sends the message endpoint URL and closes quickly.
+     * Compatible with shared hosting where long-running SSE connections
+     * block concurrent requests.
      */
     public function handle_sse( \WP_REST_Request $request ): void {
         $this->send_cors_headers();
@@ -103,9 +104,10 @@ class MCP_Server {
             session_write_close();
         }
 
-        // Disable execution time limit for long-running connection
-        @set_time_limit( 0 );
-        ignore_user_abort( true );
+        // Disable ALL output buffering
+        while ( ob_get_level() ) {
+            ob_end_clean();
+        }
 
         // Set SSE headers
         header( 'Content-Type: text/event-stream' );
@@ -113,28 +115,14 @@ class MCP_Server {
         header( 'Connection: keep-alive' );
         header( 'X-Accel-Buffering: no' );
 
-        // Disable ALL output buffering
-        while ( ob_get_level() ) {
-            ob_end_clean();
-        }
-
         // Send endpoint info immediately
         $message_url = rest_url( self::NAMESPACE . '/message' );
         $this->send_event( 'endpoint', $message_url );
 
-        // Keep connection alive — short sleep for responsiveness
-        $start   = time();
-        $timeout = 120; // 2 minutes max (shared hosting friendly)
-
-        while ( ( time() - $start ) < $timeout ) {
-            if ( connection_aborted() ) {
-                break;
-            }
-
-            $this->send_event( 'ping', '' );
-
-            // Short sleep to not hog CPU
-            sleep( 5 );
+        // Flush and close — don't hold the connection
+        // This ensures the message endpoint is not blocked on shared hosting
+        if ( function_exists( 'fastcgi_finish_request' ) ) {
+            fastcgi_finish_request();
         }
 
         exit;
