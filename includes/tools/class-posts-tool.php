@@ -66,7 +66,7 @@ class Posts_Tool {
 
         $tools[] = [
             'name'        => 'posts_list',
-            'description' => 'List WordPress posts, pages, or custom post types with filters.',
+            'description' => 'List WordPress posts, pages, or custom post types with filters. Use post_type "page" to list pages.',
             'inputSchema' => [
                 'type'       => 'object',
                 'properties' => [
@@ -104,13 +104,17 @@ class Posts_Tool {
 
         $tools[] = [
             'name'        => 'posts_get',
-            'description' => 'Get a single post/page by ID with full content and meta.',
+            'description' => 'Get a single post or page by ID with full content and meta.',
             'inputSchema' => [
                 'type'       => 'object',
                 'properties' => [
                     'id' => [
                         'type'        => 'integer',
-                        'description' => 'Post ID to retrieve.',
+                        'description' => 'Post or page ID to retrieve.',
+                    ],
+                    'format' => [
+                        'type'        => 'string',
+                        'description' => 'Content format: "raw" (default, includes Gutenberg blocks/HTML) or "clean" (plain text, no HTML/blocks).',
                     ],
                 ],
                 'required' => [ 'id' ],
@@ -244,6 +248,24 @@ class Posts_Tool {
             return [ 'content' => [ [ 'type' => 'text', 'text' => 'This post type is not accessible' ] ], 'isError' => true ];
         }
 
+        $format = sanitize_text_field( $args['format'] ?? 'raw' );
+
+        // Process content based on format
+        if ( $format === 'clean' ) {
+            $content = $post->post_content;
+            // Remove Gutenberg block comments
+            $content = preg_replace( '/<!--\s*\/?wp:\S.*?-->/s', '', $content );
+            // Apply WordPress content filters (shortcodes, embeds)
+            $content = apply_filters( 'the_content', $content );
+            // Strip all HTML tags
+            $content = wp_strip_all_tags( $content );
+            // Clean up whitespace
+            $content = preg_replace( '/\n{3,}/', "\n\n", $content );
+            $content = trim( $content );
+        } else {
+            $content = $post->post_content;
+        }
+
         // Filter meta — remove internal/sensitive keys
         $raw_meta = get_post_meta( $post->ID );
         $safe_meta = [];
@@ -256,7 +278,7 @@ class Posts_Tool {
         $data = [
             'id'        => $post->ID,
             'title'     => $post->post_title,
-            'content'   => $post->post_content,
+            'content'   => $content,
             'excerpt'   => $post->post_excerpt,
             'status'    => $post->post_status,
             'type'      => $post->post_type,
