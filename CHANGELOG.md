@@ -72,6 +72,7 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 
 ### Adicionado
 
+- URL da imagem destacada (thumbnail) nos retornos de `posts_list` e `posts_get`
 - Opção `format: "clean"` no `posts_get` — retorna texto puro sem blocos Gutenberg/HTML
 - Descrição explícita de suporte a pages no `posts_list`
 - Endpoint renomeado de `/message` para `/mcp` (backward compatible)
