@@ -93,7 +93,8 @@ class MCP_Server {
         }
 
         // Check concurrent SSE connections (prevent resource exhaustion)
-        if ( ! Auth::check_sse_limit( $key_data ) ) {
+        // Use a higher limit and shorter TTL to avoid stale slots on shared hosting
+        if ( ! Auth::check_sse_limit( $key_data, 10 ) ) {
             wp_send_json_error( [ 'message' => 'Too many concurrent SSE connections for this key' ], 429 );
             return;
         }

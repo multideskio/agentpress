@@ -227,7 +227,7 @@ class Auth {
     /**
      * Check concurrent SSE connections for a key.
      */
-    public static function check_sse_limit( array $key_data, int $max_connections = 3 ): bool {
+    public static function check_sse_limit( array $key_data, int $max_connections = 10 ): bool {
         $transient_key = 'agentpress_sse_' . $key_data['id'];
         $count         = (int) get_transient( $transient_key );
 
@@ -235,7 +235,7 @@ class Auth {
             return false;
         }
 
-        set_transient( $transient_key, $count + 1, 360 ); // 6 min TTL
+        set_transient( $transient_key, $count + 1, 60 ); // 60s TTL — auto-expires stale slots
         return true;
     }
 
@@ -247,7 +247,9 @@ class Auth {
         $count         = (int) get_transient( $transient_key );
 
         if ( $count > 0 ) {
-            set_transient( $transient_key, $count - 1, 360 );
+            set_transient( $transient_key, $count - 1, 60 );
+        } else {
+            delete_transient( $transient_key );
         }
     }
 }
