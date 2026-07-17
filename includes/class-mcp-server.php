@@ -74,30 +74,38 @@ class MCP_Server {
 
     /**
      * Handle SSE connection — MCP transport layer.
+     * Optimized for shared hosting: sends endpoint and keeps connection
+     * alive with minimal resource usage.
      */
     public function handle_sse( \WP_REST_Request $request ): void {
         $this->send_cors_headers();
 
         $key_data = Auth::validate( $request );
         if ( ! $key_data ) {
-            wp_send_json_error( [ 'message' => 'Invalid or missing API key' ], 401 );
-            return;
+            status_header( 401 );
+            header( 'Content-Type: application/json' );
+            echo wp_json_encode( [ 'error' => 'Invalid or missing API key' ] );
+            exit;
         }
 
         Hooks::key_authenticated( $key_data );
 
         if ( ! Auth::check_rate_limit( $key_data ) ) {
             Hooks::rate_limited( $key_data );
-            wp_send_json_error( [ 'message' => 'Rate limit exceeded' ], 429 );
-            return;
+            status_header( 429 );
+            header( 'Content-Type: application/json' );
+            echo wp_json_encode( [ 'error' => 'Rate limit exceeded' ] );
+            exit;
         }
 
-        // Check concurrent SSE connections (prevent resource exhaustion)
-        // Use a higher limit and shorter TTL to avoid stale slots on shared hosting
-        if ( ! Auth::check_sse_limit( $key_data, 10 ) ) {
-            wp_send_json_error( [ 'message' => 'Too many concurrent SSE connections for this key' ], 429 );
-            return;
+        // Close PHP session to prevent blocking concurrent requests
+        if ( session_status() === PHP_SESSION_ACTIVE ) {
+            session_write_close();
         }
+
+        // Disable execution time limit for long-running connection
+        @set_time_limit( 0 );
+        ignore_user_abort( true );
 
         // Set SSE headers
         header( 'Content-Type: text/event-stream' );
@@ -105,18 +113,18 @@ class MCP_Server {
         header( 'Connection: keep-alive' );
         header( 'X-Accel-Buffering: no' );
 
-        // Disable output buffering
+        // Disable ALL output buffering
         while ( ob_get_level() ) {
             ob_end_clean();
         }
 
-        // Send endpoint info
+        // Send endpoint info immediately
         $message_url = rest_url( self::NAMESPACE . '/message' );
         $this->send_event( 'endpoint', $message_url );
 
-        // Keep connection alive
+        // Keep connection alive — short sleep for responsiveness
         $start   = time();
-        $timeout = 300; // 5 minutes max
+        $timeout = 120; // 2 minutes max (shared hosting friendly)
 
         while ( ( time() - $start ) < $timeout ) {
             if ( connection_aborted() ) {
@@ -124,11 +132,11 @@ class MCP_Server {
             }
 
             $this->send_event( 'ping', '' );
-            sleep( 10 );
+
+            // Short sleep to not hog CPU
+            sleep( 5 );
         }
 
-        // Release SSE slot on disconnect
-        Auth::release_sse_slot( $key_data );
         exit;
     }
 
