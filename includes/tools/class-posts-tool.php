@@ -224,6 +224,7 @@ class Posts_Tool {
                 'modified'  => $post->post_modified,
                 'excerpt'   => wp_trim_words( $post->post_content, 30 ),
                 'permalink' => get_permalink( $post->ID ),
+                'thumbnail' => get_the_post_thumbnail_url( $post->ID, 'medium' ) ?: null,
             ];
         }
 
@@ -286,6 +287,8 @@ class Posts_Tool {
             'modified'  => $post->post_modified,
             'author'    => get_the_author_meta( 'display_name', $post->post_author ),
             'permalink' => get_permalink( $post->ID ),
+            'thumbnail' => get_the_post_thumbnail_url( $post->ID, 'full' ) ?: null,
+            'thumbnail_medium' => get_the_post_thumbnail_url( $post->ID, 'medium' ) ?: null,
             'meta'      => $safe_meta,
         ];
 
