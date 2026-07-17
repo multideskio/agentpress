@@ -1,0 +1,203 @@
+# Portuguese (Brazil) translation for AgentPress
+# Copyright (C) 2026
+# This file is distributed under the same license as the AgentPress plugin.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: AgentPress 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-17 12:00+0000\n"
+"PO-Revision-Date: 2026-07-17 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Portuguese (Brazil)\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+# Keys page
+msgid "AgentPress — Chaves de API"
+msgstr "AgentPress — Chaves de API"
+
+msgid "Nova chave criada!"
+msgstr "Nova chave criada!"
+
+msgid "Copie agora — ela não será exibida novamente:"
+msgstr "Copie agora — ela não será exibida novamente:"
+
+msgid "Endpoint SSE:"
+msgstr "Endpoint SSE:"
+
+msgid "Chave excluída."
+msgstr "Chave excluída."
+
+msgid "Chaves existentes"
+msgstr "Chaves existentes"
+
+msgid "Nome"
+msgstr "Nome"
+
+msgid "Chave (parcial)"
+msgstr "Chave (parcial)"
+
+msgid "Permissões"
+msgstr "Permissões"
+
+msgid "Limite de taxa"
+msgstr "Limite de taxa"
+
+msgid "Último uso"
+msgstr "Último uso"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Ações"
+msgstr "Ações"
+
+msgid "Nenhuma chave de API ainda. Crie uma abaixo."
+msgstr "Nenhuma chave de API ainda. Crie uma abaixo."
+
+msgid "Nunca"
+msgstr "Nunca"
+
+msgid "Ativa"
+msgstr "Ativa"
+
+msgid "Inativa"
+msgstr "Inativa"
+
+msgid "Excluir esta chave?"
+msgstr "Excluir esta chave?"
+
+msgid "Excluir"
+msgstr "Excluir"
+
+msgid "Criar nova chave de API"
+msgstr "Criar nova chave de API"
+
+msgid "Nome da chave"
+msgstr "Nome da chave"
+
+msgid "Ex: Agente Claude, Bot de suporte"
+msgstr "Ex: Agente Claude, Bot de suporte"
+
+msgid "Limite de taxa (req/min)"
+msgstr "Limite de taxa (req/min)"
+
+msgid "Acesso a Posts"
+msgstr "Acesso a Posts"
+
+msgid "Ler"
+msgstr "Ler"
+
+msgid "Criar"
+msgstr "Criar"
+
+msgid "Editar"
+msgstr "Editar"
+
+msgid "Acesso a Usuários"
+msgstr "Acesso a Usuários"
+
+msgid "Acesso ao WooCommerce"
+msgstr "Acesso ao WooCommerce"
+
+msgid "Editar Pedidos"
+msgstr "Editar Pedidos"
+
+msgid "Acesso Direto ao Banco"
+msgstr "Acesso Direto ao Banco"
+
+msgid "Habilitar"
+msgstr "Habilitar"
+
+msgid "⚠️ Permite consultas SQL diretas em tabelas permitidas."
+msgstr "⚠️ Permite consultas SQL diretas em tabelas permitidas."
+
+msgid "Tabelas permitidas"
+msgstr "Tabelas permitidas"
+
+msgid "Uma tabela por linha. Use * para todas as tabelas (não recomendado)."
+msgstr "Uma tabela por linha. Use * para todas as tabelas (não recomendado)."
+
+msgid "Operações no Banco"
+msgstr "Operações no Banco"
+
+msgid "SELECT (ler)"
+msgstr "SELECT (ler)"
+
+msgid "INSERT (criar)"
+msgstr "INSERT (criar)"
+
+msgid "UPDATE (editar)"
+msgstr "UPDATE (editar)"
+
+msgid "Criar Chave de API"
+msgstr "Criar Chave de API"
+
+msgid "Como conectar"
+msgstr "Como conectar"
+
+msgid "Seu endpoint MCP SSE:"
+msgstr "Seu endpoint MCP SSE:"
+
+msgid "Adicione o header Authorization: Bearer SUA_CHAVE_API para conectar seu agente."
+msgstr "Adicione o header Authorization: Bearer SUA_CHAVE_API para conectar seu agente."
+
+# Logs page
+msgid "AgentPress — Log de Auditoria"
+msgstr "AgentPress — Log de Auditoria"
+
+msgid "Data"
+msgstr "Data"
+
+msgid "Chave"
+msgstr "Chave"
+
+msgid "Ferramenta"
+msgstr "Ferramenta"
+
+msgid "Ação"
+msgstr "Ação"
+
+msgid "Resultado"
+msgstr "Resultado"
+
+msgid "IP"
+msgstr "IP"
+
+msgid "Nenhum log ainda."
+msgstr "Nenhum log ainda."
+
+# Settings page
+msgid "AgentPress — Configurações"
+msgstr "AgentPress — Configurações"
+
+msgid "Configurações salvas."
+msgstr "Configurações salvas."
+
+msgid "Tabelas Permitidas Globalmente"
+msgstr "Tabelas Permitidas Globalmente"
+
+msgid "Tabelas que podem ser acessadas pela ferramenta de Banco de Dados (uma por linha)."
+msgstr "Tabelas que podem ser acessadas pela ferramenta de Banco de Dados (uma por linha)."
+
+msgid "Chaves individuais podem restringir esta lista ainda mais."
+msgstr "Chaves individuais podem restringir esta lista ainda mais."
+
+msgid "Deixe vazio para desabilitar o acesso ao banco globalmente."
+msgstr "Deixe vazio para desabilitar o acesso ao banco globalmente."
+
+msgid "Colunas Bloqueadas"
+msgstr "Colunas Bloqueadas"
+
+msgid "Colunas que NUNCA são expostas aos agentes (uma por linha)."
+msgstr "Colunas que NUNCA são expostas aos agentes (uma por linha)."
+
+msgid "Padrão: user_pass, user_activation_key, session_tokens"
+msgstr "Padrão: user_pass, user_activation_key, session_tokens"
+
+msgid "Salvar Configurações"
+msgstr "Salvar Configurações"
