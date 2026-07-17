@@ -14,7 +14,21 @@ class MCP_Server {
             'permission_callback' => '__return_true',
         ]);
 
-        // Messages endpoint (POST)
+        // MCP endpoint (Streamable HTTP transport)
+        register_rest_route( self::NAMESPACE, '/mcp', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $this, 'handle_message' ],
+                'permission_callback' => '__return_true',
+            ],
+            [
+                'methods'             => 'OPTIONS',
+                'callback'            => [ $this, 'handle_options' ],
+                'permission_callback' => '__return_true',
+            ],
+        ]);
+
+        // Legacy /message endpoint (backwards compatibility)
         register_rest_route( self::NAMESPACE, '/message', [
             [
                 'methods'             => 'POST',
@@ -116,7 +130,7 @@ class MCP_Server {
         header( 'X-Accel-Buffering: no' );
 
         // Send endpoint info immediately
-        $message_url = rest_url( self::NAMESPACE . '/message' );
+        $message_url = rest_url( self::NAMESPACE . '/mcp' );
         $this->send_event( 'endpoint', $message_url );
 
         // Flush and close — don't hold the connection
