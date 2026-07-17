@@ -35,8 +35,14 @@ class Plugin {
      * Check if tables exist and create them if not.
      */
     public function maybe_install(): void {
-        $installed_version = get_option( 'agentpress_version' );
-        if ( $installed_version !== AGENTPRESS_VERSION ) {
+        global $wpdb;
+
+        // Check if table actually exists (not just version option)
+        $table_exists = $wpdb->get_var(
+            $wpdb->prepare( "SHOW TABLES LIKE %s", $wpdb->prefix . 'agentpress_keys' )
+        );
+
+        if ( ! $table_exists || get_option( 'agentpress_version' ) !== AGENTPRESS_VERSION ) {
             Installer::activate();
         }
     }
