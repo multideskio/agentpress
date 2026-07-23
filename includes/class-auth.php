@@ -189,53 +189,54 @@ class Auth {
     }
 
     /**
-     * Check rate limit for a key — uses atomic increment to prevent race conditions.
+     * Check rate limit for a key (POST requests only).
+     * Uses a simple sliding window per minute.
      */
     public static function check_rate_limit( array $key_data ): bool {
-        global $wpdb;
+        $rate_limit = (int) ( $key_data['rate_limit'] ?? 0 );
 
-        $rate_limit    = (int) $key_data['rate_limit'];
-        $transient_key = 'agentpress_rate_' . $key_data['id'];
-
-        // Use direct DB update for atomicity
-        $table = $wpdb->options;
-        $option_name = '_transient_' . $transient_key;
-
-        // Try atomic increment
-        $updated = $wpdb->query( $wpdb->prepare(
-            "UPDATE {$table} SET option_value = option_value + 1 WHERE option_name = %s AND option_value < %d",
-            $option_name,
-            $rate_limit
-        ) );
-
-        if ( $updated ) {
-            return true; // Increment succeeded, under limit
-        }
-
-        // Check if transient exists
-        $current = get_transient( $transient_key );
-        if ( $current === false ) {
-            // First request in this window — create transient
-            set_transient( $transient_key, 1, 60 );
+        // 0 = unlimited
+        if ( $rate_limit <= 0 ) {
             return true;
         }
 
-        // Transient exists but update failed = over limit
-        return false;
+        $transient_key = 'agentpress_rate_' . $key_data['id'];
+        $current       = (int) get_transient( $transient_key );
+
+        if ( $current >= $rate_limit ) {
+            return false;
+        }
+
+        // Increment — if first request, set with 60s TTL
+        if ( $current === 0 ) {
+            set_transient( $transient_key, 1, 60 );
+        } else {
+            // Update value keeping existing TTL (WordPress doesn't support this natively,
+            // so we set again with 60s — acceptable slight drift)
+            set_transient( $transient_key, $current + 1, 60 );
+        }
+
+        return true;
     }
 
     /**
      * Check concurrent SSE connections for a key.
      */
-    public static function check_sse_limit( array $key_data, int $max_connections = 10 ): bool {
+    public static function check_sse_limit( array $key_data ): bool {
+        $max = (int) get_option( 'agentpress_sse_max_connections', 3 );
+
+        if ( $max <= 0 ) {
+            return true; // 0 = unlimited
+        }
+
         $transient_key = 'agentpress_sse_' . $key_data['id'];
         $count         = (int) get_transient( $transient_key );
 
-        if ( $count >= $max_connections ) {
+        if ( $count >= $max ) {
             return false;
         }
 
-        set_transient( $transient_key, $count + 1, 60 ); // 60s TTL — auto-expires stale slots
+        set_transient( $transient_key, $count + 1, 600 ); // 10min TTL — auto-expire stale slots
         return true;
     }
 
@@ -246,10 +247,33 @@ class Auth {
         $transient_key = 'agentpress_sse_' . $key_data['id'];
         $count         = (int) get_transient( $transient_key );
 
-        if ( $count > 0 ) {
-            set_transient( $transient_key, $count - 1, 60 );
+        if ( $count > 1 ) {
+            set_transient( $transient_key, $count - 1, 600 );
         } else {
             delete_transient( $transient_key );
         }
+    }
+
+    /**
+     * Record activity timestamp for a key (called on POST /mcp).
+     */
+    public static function touch_activity( array $key_data ): void {
+        $transient_key = 'agentpress_activity_' . $key_data['id'];
+        set_transient( $transient_key, time(), 600 );
+    }
+
+    /**
+     * Get seconds since last activity for a key.
+     * Returns 0 if never recorded (treat as active).
+     */
+    public static function get_idle_seconds( array $key_data ): int {
+        $transient_key = 'agentpress_activity_' . $key_data['id'];
+        $last_activity = get_transient( $transient_key );
+
+        if ( $last_activity === false ) {
+            return 0; // No record = just connected, treat as active
+        }
+
+        return time() - (int) $last_activity;
     }
 }

@@ -180,6 +180,14 @@ class Admin_Page {
             Webhooks::save_urls( $webhook_urls );
         }
 
+        // SSE & Rate Limit settings
+        $sse_max = absint( $_POST['sse_max_connections'] ?? 3 );
+        update_option( 'agentpress_sse_max_connections', $sse_max );
+
+        $sse_idle = absint( $_POST['sse_idle_timeout'] ?? 300 );
+        if ( $sse_idle < 60 ) $sse_idle = 60; // minimum 1 minute
+        update_option( 'agentpress_sse_idle_timeout', $sse_idle );
+
         wp_redirect( admin_url( 'admin.php?page=agentpress-settings&saved=1' ) );
         exit;
     }
@@ -297,6 +305,10 @@ class Admin_Page {
         $blocked_columns = get_option( 'agentpress_blocked_columns', [ 'user_pass', 'user_activation_key', 'session_tokens' ] );
         $webhook_urls    = Webhooks::get_urls();
         $detected        = Discovery::get_detected();
+
+        // SSE settings
+        $sse_max_connections = (int) get_option( 'agentpress_sse_max_connections', 3 );
+        $sse_idle_timeout    = (int) get_option( 'agentpress_sse_idle_timeout', 300 );
 
         include AGENTPRESS_PLUGIN_DIR . 'includes/admin/views/settings.php';
     }

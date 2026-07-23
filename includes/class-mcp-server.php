@@ -7,14 +7,8 @@ class MCP_Server {
     private const NAMESPACE = 'agentpress/v1';
 
     public function register(): void {
-        // SSE endpoint for MCP transport
-        register_rest_route( self::NAMESPACE, '/sse', [
-            'methods'             => 'GET',
-            'callback'            => [ $this, 'handle_sse' ],
-            'permission_callback' => '__return_true',
-        ]);
-
-        // MCP endpoint (Streamable HTTP transport)
+        // Main MCP endpoint — Streamable HTTP Transport
+        // Accepts POST (JSON-RPC messages) and DELETE (session termination)
         register_rest_route( self::NAMESPACE, '/mcp', [
             [
                 'methods'             => 'POST',
@@ -22,10 +16,22 @@ class MCP_Server {
                 'permission_callback' => '__return_true',
             ],
             [
+                'methods'             => 'GET',
+                'callback'            => [ $this, 'handle_mcp_get' ],
+                'permission_callback' => '__return_true',
+            ],
+            [
                 'methods'             => 'OPTIONS',
                 'callback'            => [ $this, 'handle_options' ],
                 'permission_callback' => '__return_true',
             ],
+        ]);
+
+        // Legacy SSE endpoint (redirects to /mcp)
+        register_rest_route( self::NAMESPACE, '/sse', [
+            'methods'             => 'GET',
+            'callback'            => [ $this, 'handle_sse' ],
+            'permission_callback' => '__return_true',
         ]);
 
         // Legacy /message endpoint (backwards compatibility)
@@ -57,8 +63,32 @@ class MCP_Server {
         $origin = apply_filters( 'agentpress_cors_origin', '*' );
 
         header( "Access-Control-Allow-Origin: {$origin}" );
-        header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
-        header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
+        header( 'Access-Control-Allow-Headers: Authorization, Content-Type, Accept, Last-Event-ID' );
+        header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE' );
+    }
+
+    /**
+     * Handle GET on /mcp — returns server info (not SSE).
+     * Pure Streamable HTTP: no SSE stream needed.
+     */
+    public function handle_mcp_get( \WP_REST_Request $request ): \WP_REST_Response {
+        $this->send_cors_headers();
+
+        return new \WP_REST_Response( [
+            'jsonrpc' => '2.0',
+            'result'  => [
+                'protocolVersion' => '2024-11-05',
+                'capabilities'    => [
+                    'tools'     => [ 'listChanged' => false ],
+                    'resources' => [ 'listChanged' => false ],
+                ],
+                'serverInfo'      => [
+                    'name'    => 'AgentPress',
+                    'version' => AGENTPRESS_VERSION,
+                ],
+            ],
+            'id'      => null,
+        ], 200 );
     }
 
     /**
@@ -87,10 +117,9 @@ class MCP_Server {
     }
 
     /**
-     * Handle SSE connection — MCP transport layer.
-     * Sends the message endpoint URL and closes quickly.
-     * Compatible with shared hosting where long-running SSE connections
-     * block concurrent requests.
+     * Handle SSE connection — Streamable HTTP Transport (GET).
+     * Sends the message endpoint URL and keeps connection alive.
+     * Disconnects after idle timeout (no POST activity from this key).
      */
     public function handle_sse( \WP_REST_Request $request ): void {
         $this->send_cors_headers();
@@ -105,11 +134,11 @@ class MCP_Server {
 
         Hooks::key_authenticated( $key_data );
 
-        if ( ! Auth::check_rate_limit( $key_data ) ) {
-            Hooks::rate_limited( $key_data );
+        // Check SSE connection limit
+        if ( ! Auth::check_sse_limit( $key_data ) ) {
             status_header( 429 );
             header( 'Content-Type: application/json' );
-            echo wp_json_encode( [ 'error' => 'Rate limit exceeded' ] );
+            echo wp_json_encode( [ 'error' => 'Too many SSE connections' ] );
             exit;
         }
 
@@ -123,27 +152,69 @@ class MCP_Server {
             ob_end_clean();
         }
 
+        // Increase limits for long-running SSE
+        set_time_limit( 0 );
+        ignore_user_abort( false );
+
         // Set SSE headers
         header( 'Content-Type: text/event-stream' );
-        header( 'Cache-Control: no-cache' );
+        header( 'Cache-Control: no-cache, no-store, must-revalidate' );
         header( 'Connection: keep-alive' );
         header( 'X-Accel-Buffering: no' );
+        header( 'Pragma: no-cache' );
 
         // Send endpoint info immediately
         $message_url = rest_url( self::NAMESPACE . '/mcp' );
         $this->send_event( 'endpoint', $message_url );
 
-        // Flush and close — don't hold the connection
-        // This ensures the message endpoint is not blocked on shared hosting
-        if ( function_exists( 'fastcgi_finish_request' ) ) {
-            fastcgi_finish_request();
+        // Mark initial activity so idle timer starts from now
+        Auth::touch_activity( $key_data );
+
+        // Idle timeout in seconds (default 5 minutes)
+        $idle_timeout = (int) get_option( 'agentpress_sse_idle_timeout', 300 );
+
+        // Keep connection alive — send ping every 15 seconds
+        // Disconnect if no POST activity for $idle_timeout seconds
+        while ( true ) {
+            if ( connection_aborted() ) {
+                break;
+            }
+
+            sleep( 15 );
+
+            if ( connection_aborted() ) {
+                break;
+            }
+
+            // Check idle timeout
+            $idle = Auth::get_idle_seconds( $key_data );
+            if ( $idle > 0 && $idle >= $idle_timeout ) {
+                // Notify client to reconnect, then close
+                $this->send_event( 'message', wp_json_encode( [
+                    'jsonrpc' => '2.0',
+                    'method'  => 'notifications/idle_timeout',
+                    'params'  => [ 'message' => 'Connection closed due to inactivity. Please reconnect.' ],
+                ] ) );
+                break;
+            }
+
+            // SSE comment as keepalive
+            echo ": ping\n\n";
+            if ( ob_get_level() ) {
+                ob_flush();
+            }
+            flush();
         }
+
+        // Release SSE slot
+        Auth::release_sse_slot( $key_data );
 
         exit;
     }
 
     /**
-     * Handle MCP JSON-RPC message.
+     * Handle MCP JSON-RPC message (POST).
+     * Streamable HTTP Transport — response is inline in the HTTP response body.
      */
     public function handle_message( \WP_REST_Request $request ): \WP_REST_Response {
         $this->send_cors_headers();
@@ -159,6 +230,7 @@ class MCP_Server {
 
         Hooks::key_authenticated( $key_data );
 
+        // Rate limit only on POST (not SSE)
         if ( ! Auth::check_rate_limit( $key_data ) ) {
             Hooks::rate_limited( $key_data );
             return new \WP_REST_Response( [
@@ -167,6 +239,9 @@ class MCP_Server {
                 'id'      => null,
             ], 429 );
         }
+
+        // Touch activity — resets idle timeout for SSE connection
+        Auth::touch_activity( $key_data );
 
         $body = $request->get_json_params();
 
@@ -206,6 +281,9 @@ class MCP_Server {
         switch ( $method ) {
             case 'initialize':
                 return $this->handle_initialize();
+
+            case 'notifications/initialized':
+                return []; // Acknowledge notification
 
             case 'tools/list':
                 return $this->handle_tools_list( $key_data );
@@ -282,7 +360,6 @@ class MCP_Server {
 
     /**
      * Handle resources/list MCP method.
-     * Returns site info, post types, taxonomies, and installed plugins.
      */
     private function handle_resources_list(): array {
         global $wp_version;

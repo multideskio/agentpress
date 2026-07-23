@@ -42,6 +42,26 @@
                     </p>
                 </td>
             </tr>
+            <tr>
+                <th><label for="sse_max_connections"><?php esc_html_e( 'Conexões SSE por chave', 'agentpress' ); ?></label></th>
+                <td>
+                    <input type="number" name="sse_max_connections" id="sse_max_connections" value="<?php echo esc_attr( $sse_max_connections ); ?>" min="0" max="50" class="small-text">
+                    <p class="description">
+                        <?php esc_html_e( 'Máximo de conexões SSE simultâneas por API key. 0 = ilimitado.', 'agentpress' ); ?><br>
+                        <?php esc_html_e( 'Recomendado: 2-5 (depende dos workers PHP disponíveis).', 'agentpress' ); ?>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <th><label for="sse_idle_timeout"><?php esc_html_e( 'Timeout de inatividade (SSE)', 'agentpress' ); ?></label></th>
+                <td>
+                    <input type="number" name="sse_idle_timeout" id="sse_idle_timeout" value="<?php echo esc_attr( $sse_idle_timeout ); ?>" min="60" max="3600" step="60" class="small-text"> <?php esc_html_e( 'segundos', 'agentpress' ); ?>
+                    <p class="description">
+                        <?php esc_html_e( 'Tempo sem interação (POST) antes de fechar a conexão SSE. O cliente deve reconectar automaticamente.', 'agentpress' ); ?><br>
+                        <?php esc_html_e( 'Padrão: 300 (5 minutos). Mínimo: 60 (1 minuto).', 'agentpress' ); ?>
+                    </p>
+                </td>
+            </tr>
         </table>
 
         <?php if ( ! empty( $detected ) ) : ?>
