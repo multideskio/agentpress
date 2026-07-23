@@ -3,7 +3,7 @@
  * Plugin Name: AgentPress
  * Plugin URI: https://github.com/SEU-USUARIO/agentpress
  * Description: MCP (Model Context Protocol) server for WordPress with granular database access. Give AI agents controlled access to posts, products, orders, and any database table.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: 
  * Author URI: 
  * License: GPL-2.0-or-later
@@ -65,7 +65,7 @@ if ( isset( $_GET['agentpress_deactivated'] ) && $_GET['agentpress_deactivated']
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-define( 'AGENTPRESS_VERSION', '0.1.0' );
+define( 'AGENTPRESS_VERSION', '0.2.0' );
 define( 'AGENTPRESS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AGENTPRESS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

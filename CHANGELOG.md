@@ -76,3 +76,15 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/).
 - Opção `format: "clean"` no `posts_get` — retorna texto puro sem blocos Gutenberg/HTML
 - Descrição explícita de suporte a pages no `posts_list`
 - Endpoint renomeado de `/message` para `/mcp` (backward compatible)
+- SSE idle timeout — desconecta após inatividade configurável (padrão 5min)
+- Limite de conexões SSE simultâneas por API key (padrão 3, configurável)
+- Rate limit aplicado apenas no POST `/mcp` (não bloqueia reconexão SSE)
+- Endpoint GET `/mcp` com server info (Streamable HTTP discovery)
+- Handler para `notifications/initialized` (compliance MCP spec)
+- Configurações de SSE no admin (conexões máximas, timeout de inatividade)
+
+### Alterado
+
+- SSE mantém conexão viva com keepalive (ping a cada 15s) em vez de fechar imediatamente
+- CORS headers atualizados para suportar `Accept`, `Last-Event-ID` e método `DELETE`
+- Endpoint `/sse` reorganizado como legacy (ainda funcional)
